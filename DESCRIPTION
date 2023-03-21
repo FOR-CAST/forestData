@@ -1,0 +1,37 @@
+Package: forestData
+Title: Tools for importing Canadian forestry data
+Description: Simplify importing of Canadian forestry data from various sources,
+    including CASFRI and others.
+URL: https://github.com/FOR-CAST/forestData
+Date: 2022-03-20
+Version: 0.0.1
+Authors@R: c(
+    person("Alex M", "Chubaty", , "achubaty@for-cast.ca", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0001-7146-8135"))
+  )
+Depends:
+    R (>= 4.2)
+Imports:
+    data.table,
+    dplyr,
+    reproducible,
+    sf,
+    SpaDES.tools,
+    stats,
+    tools,
+    utils
+Suggests:
+    covr,
+    knitr,
+    rmarkdown,
+    roxygen2,
+    testthat (>= 3.0.0)
+Remotes:
+    PredictiveEcology/reproducible@development,
+    PredictiveEcology/SpaDES.tools@development
+BugReports: URL: https://github.com/FOR-CAST/forestData/issues
+Encoding: UTF-8
+Language: en-CA
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.2.3
+Config/testthat/edition: 3
