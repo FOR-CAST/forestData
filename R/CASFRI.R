@@ -95,14 +95,14 @@ casfriSpeciesCover.PqConnection <- function(x, ...) {
 #'
 #' @export
 #' @importFrom exactextractr rasterize_polygons
-#' @importFrom raster stack
+#' @importFrom raster raster stack
 #' @rdname casfri-species
 casfriSpeciesLayers <- function(x, rtm) {
   sppCols <- .sppCols(x)
   pctCols <- .pctCols(x)
   speciesPresent <- na.omit(unique(unlist(lapply(sppCols, function(sp) x[[sp]]))))
 
-  template <- rtm * 0L
+  template <- raster(rtm * 0L)
   sppRasters <- lapply(seq_along(sppCols), function(i) {
     x_ <- x[!is.na(x[[sppCols[i]]]), ]
     spp <- sort(unique(x_[[sppCols[i]]]))
