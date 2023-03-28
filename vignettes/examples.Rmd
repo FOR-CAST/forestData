@@ -1,0 +1,94 @@
+---
+title: "examples"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{examples}
+  %\VignetteEncoding{UTF-8}
+  %\VignetteEngine{knitr::rmarkdown}
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(forestData)
+library(googledrive)
+library(sf)
+library(terra)
+library(reproducible)
+library(RPostgres)
+```
+
+## Using previously exported CASFRI data
+
+```{r, eval = FALSE}
+## ensure you are working with enough temp scratch storage space!
+dataPath <- "~/data/CASFRI/v5/Ontario"
+scratchPath <- ifelse(nzchar(Sys.getenv("SCRATCHDIR")), Sys.getenv("SCRATCHDIR"), tempdir())
+
+options(
+  reproducible.cachePath = file.path(scratchPath, "cache"),
+  reproducible.useTerra = TRUE
+)
+
+terraOptions(
+  memfrac = 0.2,
+  tempdir = scratchPath
+)
+
+## access CASFRI ROF files on Google Drive
+drive_auth()
+driveFiles <- drive_ls(as_id("1E8YjNA8AEt2J44R5z7jz1x799jU1X1J6"))
+lapply(driveFiles, drive_download, path = dataPath)
+
+casfriFiles <- list(
+  geo = file.path(dataPath, "CEON_ROF_casfri.gdb"), ## geometry attributes
+  hdr = file.path(dataPath, "CEON_ROF_hdr.csv"),    ## header attributes
+  cas = file.path(dataPath, "CEON_ROF_cas.csv"),    ## CAS base polygon attributes
+  eco = file.path(dataPath, "CEON_ROF_eco.csv"),    ## ecological specific attributes
+  dst = file.path(dataPath, "CEON_ROF_dst.csv"),    ## disturbance history attributes
+  lyr = file.path(dataPath, "CEON_ROF_lyr.csv"),    ## forest-level attributes
+  nfl = file.path(dataPath, "CEON_ROF_nfl.csv")     ## non-forest land attributes
+)
+
+CAN <- geodata::gadm("CAN", path = scratchPath) |> st_as_sf()
+ON <- CAN[CAN$NAME_1 == "Ontario", ]
+
+ROF <- prepInputs(
+  url = "https://drive.google.com/file/d/1DzVRglqJNvZA8NZZ7XKe3-6Q5f8tlydQ",
+  targetFile = "ROF_RA_def.shp", alsoExtract = "similar",
+  fun = "sf::st_read", destinationPath = scratchPath,
+  filename2 = "ROF_RA_def", overwrite = TRUE
+)
+
+templateRaster <- Cache({
+  ntemsAge(scratchPath, studyArea = ROF)
+})
+
+casfri_sf <- Cache({
+  casfriSpeciesCover(casfriFiles) ## don't need studyArea here b/c data already subset to ROF
+})
+
+casfri_rst <- Cache({
+  casfriSpeciesLayers(casfri_sf, templateRaster)
+})
+```
+
+## Using the CASFRI database directly
+
+```{r, eval = FALSE}
+## <https://solutions.posit.co/connections/db/best-practices/managing-credentials/#use-environment-variables>
+# con <- DBI::dbConnect(drv = RPostgres::Postgres(),
+#                       host = Sys.getenv("PGHOST"),
+#                       port = Sys.getenv("PGPORT"),
+#                       dbname = Sys.getenv("PGDATABASE"),
+#                       user = Sys.getenv("PGUSER"),
+#                       password = Sys.getenv("PGPASSWORD"))
+
+```

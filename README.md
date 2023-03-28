@@ -5,7 +5,8 @@
 
 The goal of `forestData` is to simplify importing of Canadian forestry data, including:
 
-- standardized forest resource inventories from CASFRI
+- standardized forest resource inventories from CASFRI;
+- National Terrestrial Ecosystem Monitoring System (NTEMS) remote sensed products;
 
 ## Installation
 

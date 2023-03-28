@@ -1,7 +1,7 @@
 Package: forestData
 Title: Tools for importing Canadian forestry data
 Description: Simplify importing of Canadian forestry data from various sources,
-    including CASFRI and others.
+    including CASFRI, NTEMS, and others.
 URL: https://github.com/FOR-CAST/forestData
 Date: 2022-03-20
 Version: 0.0.1
@@ -10,21 +10,29 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-7146-8135"))
   )
 Depends:
-    R (>= 4.2)
+    R (>= 4.1)
 Imports:
+    exactextractr,
     data.table,
+    DBI,
     dplyr,
     reproducible,
+    RPostgres,
     sf,
     SpaDES.tools,
     stats,
+    raster,
     tools,
     utils
 Suggests:
     covr,
+    geodata,
+    googledrive,
     knitr,
+    RCurl,
     rmarkdown,
     roxygen2,
+    terra,
     testthat (>= 3.0.0)
 Remotes:
     PredictiveEcology/reproducible@development,
@@ -35,3 +43,4 @@ Language: en-CA
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Config/testthat/edition: 3
+VignetteBuilder: knitr

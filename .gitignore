@@ -1,11 +1,11 @@
-# History files
-.Rhistory
+# misc R files
 .Rapp.history
-
-# Session Data files
 .RData
-
-# User-specific files
+.Renviron
+.Rhistory
+.Rprofile
+.Rproj.user
+.Rproj.user/
 .Ruserdata
 
 # Example code in package build process
@@ -18,7 +18,6 @@
 /*.Rcheck/
 
 # RStudio files
-.Rproj.user/
 
 # produced vignettes
 vignettes/*.html
@@ -34,4 +33,4 @@ vignettes/*.pdf
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
-.Rproj.user
+inst/doc

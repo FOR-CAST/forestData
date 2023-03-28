@@ -23,6 +23,4 @@ PackageRoxygenize: rd,collate,namespace,vignette
 
 UseNativePipeOperator: Yes
 
-QuitChildProcessesOnExit: Yes
-
 SpellingDictionary: en_CA
