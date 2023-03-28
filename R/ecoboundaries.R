@@ -1,7 +1,3 @@
-utils::globalVariables(c(
-  "geometry", "USETHIS"
-))
-
 #' National eco-boundaries
 #'
 #' Prepare boundaries based on Canadian national ecodistricts, -regions, -provinces, or -zones.
@@ -15,10 +11,9 @@ utils::globalVariables(c(
 #'
 #' @param rasterToMatch (optional) template raster to use.
 #'
-#' @importFrom dplyr %>% group_by summarise ungroup
 #' @importFrom raster crs
 #' @importFrom reproducible prepInputs
-#' @importFrom sf st_as_sf st_collection_extract st_union
+#' @importFrom sf st_as_sf st_collection_extract st_make_valid st_transform
 #'
 #' @examples
 #' library(sf)
@@ -64,7 +59,7 @@ utils::globalVariables(c(
   url <- urlList[[tolower(type)]]
 
   if (!is.null(studyArea) && is(studyArea, "SpatialPolygons")) {
-    studyArea <- sf::st_as_sf(studyArea)
+    studyArea <- st_as_sf(studyArea)
   }
 
   tmp <- prepInputs(url = url,
@@ -73,12 +68,14 @@ utils::globalVariables(c(
                     rasterToMatch = rasterToMatch,
                     fun = "sf::st_read",
                     overwrite = TRUE) ## TODO: doesn't reproject -- fix upstream?
+  tmp <- st_collection_extract(tmp, "POLYGON") |>
+    st_make_valid()
 
   ## workaround issues with prepInputs() not reprojecting:
   if (!is.null(rasterToMatch)) {
-    tmp <- sf::st_transform(tmp, raster::crs(rasterToMatch))
+    tmp <- st_transform(tmp, crs(rasterToMatch))
   } else if (is.null(rasterToMatch) && !is.null(studyArea)) {
-    tmp <- sf::st_transform(tmp, sf::st_crs(studyArea))
+    tmp <- st_transform(tmp, st_crs(studyArea))
   }
 
   return(tmp)

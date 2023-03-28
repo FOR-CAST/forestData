@@ -16,15 +16,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-```{r setup}
-library(forestData)
-library(googledrive)
-library(sf)
-library(terra)
-library(reproducible)
-library(RPostgres)
-```
-
 ## Using previously exported CASFRI data
 
 ```{r, eval = FALSE}
@@ -32,6 +23,15 @@ library(RPostgres)
 dataPath <- "~/data/CASFRI/v5/Ontario"
 scratchPath <- ifelse(nzchar(Sys.getenv("SCRATCHDIR")), Sys.getenv("SCRATCHDIR"), tempdir())
 
+## load packages
+library(forestData)
+library(googledrive)
+library(sf)
+library(terra)
+library(reproducible)
+library(RPostgres)
+
+## set package options
 options(
   reproducible.cachePath = file.path(scratchPath, "cache"),
   reproducible.useTerra = TRUE
@@ -42,10 +42,14 @@ terraOptions(
   tempdir = scratchPath
 )
 
-## access CASFRI ROF files on Google Drive
+## access (private) CASFRI ROF files on Google Drive
 drive_auth()
 driveFiles <- drive_ls(as_id("1E8YjNA8AEt2J44R5z7jz1x799jU1X1J6"))
-lapply(driveFiles, drive_download, path = dataPath)
+apply(driveFiles, 1, function(f) {
+  if (!file.exists(file.path(dataPath, f$name))) {
+    drive_download(f, path = dataPath)
+  }
+})
 
 casfriFiles <- list(
   geo = file.path(dataPath, "CEON_ROF_casfri.gdb"), ## geometry attributes
@@ -67,28 +71,41 @@ ROF <- prepInputs(
   filename2 = "ROF_RA_def", overwrite = TRUE
 )
 
+smallStudyArea <- ecodistricts(destinationPath = scratchPath, studyArea = ROF)
+smallStudyArea <- smallStudyArea[smallStudyArea$ECODISTRIC == 386, ]
+
 templateRaster <- Cache({
-  ntemsAge(scratchPath, studyArea = ROF)
+  ntemsAge(scratchPath, studyArea = smallStudyArea)
 })
 
 casfri_sf <- Cache({
-  casfriSpeciesCover(casfriFiles) ## don't need studyArea here b/c data already subset to ROF
+  casfriSpeciesCover(casfriFiles, studyArea = smallStudyArea)
 })
 
 casfri_rst <- Cache({
   casfriSpeciesLayers(casfri_sf, templateRaster)
 })
+
+plot(casfri_rst)
 ```
 
 ## Using the CASFRI database directly
 
+Only available to certain users with access to the CASFRI database.
+Requires SSH tunnel.
+
 ```{r, eval = FALSE}
-## <https://solutions.posit.co/connections/db/best-practices/managing-credentials/#use-environment-variables>
-# con <- DBI::dbConnect(drv = RPostgres::Postgres(),
-#                       host = Sys.getenv("PGHOST"),
-#                       port = Sys.getenv("PGPORT"),
-#                       dbname = Sys.getenv("PGDATABASE"),
-#                       user = Sys.getenv("PGUSER"),
-#                       password = Sys.getenv("PGPASSWORD"))
+## /!\ setup ssh tunnel before attempting to connect /!\
+
+con <- DBI::dbConnect(drv = RPostgres::Postgres(),
+                      host = Sys.getenv("PGHOST"),
+                      port = Sys.getenv("PGPORT"),
+                      dbname = Sys.getenv("PGDATABASE"),
+                      user = Sys.getenv("PGUSER"),
+                      password = Sys.getenv("PGPASSWORD"))
 
 ```
+
+## Using the public mapserver/geoserver REST API
+
+Will be made available late 2023.

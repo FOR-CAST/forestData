@@ -5,8 +5,9 @@
 
 The goal of `forestData` is to simplify importing of Canadian forestry data, including:
 
-- standardized forest resource inventories from CASFRI;
-- National Terrestrial Ecosystem Monitoring System (NTEMS) remote sensed products;
+- National Ecosystem Framework for Canada (<https://sis.agr.gc.ca/cansis/nsdb/ecostrat/gis_data.html>);
+- Common Attribute Schema for Forest Resource Inventories (CASFRI; <https://casfri.github.io/CASFRI/>);
+- National Terrestrial Ecosystem Monitoring System (NTEMS, <https://opendata.nfis.org/mapserver/nfis-change_eng.html>);
 
 ## Installation
 
@@ -17,11 +18,6 @@ You can install the development version of `forestData` from [GitHub](https://gi
 remotes::install_github("FOR-CAST/forestData")
 ```
 
-## Example
+## Examples
 
-This is a basic example which shows you how to solve a common problem:
-
-``` r
-library(forestData)
-## basic example code
-```
+See the `examples` vignette.

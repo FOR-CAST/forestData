@@ -13,7 +13,7 @@ casfriSpeciesCover.list(x, studyArea = NULL)
 
 casfriSpeciesCover.PqConnection(x, ...)
 
-casfriSpeciesLayers(x, rtm)
+casfriSpeciesLayers(x, rasterToMatch)
 }
 \arguments{
 \item{x}{\code{sf} object produced via \code{casfriSpeciesCover()}}
@@ -21,7 +21,7 @@ casfriSpeciesLayers(x, rtm)
 \item{studyArea}{(optional) \code{sf} polygons object identifying the study area boundaries,
 used to extract a subset of the species cover data (i.e., spatial  intersection).}
 
-\item{rtm}{template raster (\code{RasterLayer})}
+\item{rasterToMatch}{template raster (\code{RasterLayer})}
 }
 \value{
 \code{RasterStack}

@@ -49,6 +49,8 @@ casfriSpeciesCover <- function(x, studyArea = NULL) {
 casfriSpeciesCover.list <- function(x, studyArea = NULL) {
   names(x) <- tolower(names(x))
 
+  ## TODO: rework this once the mapserver/geoserver API is active and working;
+  ##       REST API will serve (zipped) flat files of the denormalized data.
   geo <- st_read(x$geo)
   lyr <- fread(x$lyr)
 
@@ -65,13 +67,15 @@ casfriSpeciesCover.list <- function(x, studyArea = NULL) {
 
   ## see CASFRI error codes:
   ## <https://github.com/CASFRI/CASFRI/tree/master/documentation/specifications#Error_codes>
-  NAVals <- c(-8886, -8887, -8888, -9995, -9997, -9998, -9999)
+  NA_chr <- c("EMPTY_STRING", "NULL_VALUE", "NOT_APPLICABLE", "UNKNOWN_VALUE",
+              "OUT_OF_RANGE", "NOT_IN_SET", "INVALID_VALUE", "WRONG_TYPE")
+  NA_num <- c(-8886, -8887, -8888, -9995, -9997, -9998, -9999)
   cols2keep <- c("cas_id", .sppCols(lyr), .pctCols(lyr))
   lyr <- lyr[, ..cols2keep]
 
   for (i in seq_len(length(.sppCols(lyr)))) {
-    set(lyr, which(lyr[[paste0("species_", i)]] %in% NAVals), paste0("species_", i), NA_character_)
-    set(lyr, which(lyr[[paste0("species_per_", i)]] %in% NAVals), paste0("species_", i), NA_integer_)
+    set(lyr, which(lyr[[paste0("species_", i)]] %in% NA_chr), paste0("species_", i), NA_character_)
+    set(lyr, which(lyr[[paste0("species_per_", i)]] %in% NA_num), paste0("species_per_", i), NA_integer_)
   }
 
   casfri <- merge(geo, lyr, by = "cas_id")
@@ -89,7 +93,7 @@ casfriSpeciesCover.PqConnection <- function(x, ...) {
 }
 
 #' @param x `sf` object produced via `casfriSpeciesCover()`
-#' @param rtm template raster (`RasterLayer`)
+#' @param rasterToMatch template raster (`RasterLayer`)
 #'
 #' @return `RasterStack`
 #'
@@ -97,29 +101,35 @@ casfriSpeciesCover.PqConnection <- function(x, ...) {
 #' @importFrom exactextractr rasterize_polygons
 #' @importFrom raster raster stack
 #' @rdname casfri-species
-casfriSpeciesLayers <- function(x, rtm) {
+casfriSpeciesLayers <- function(x, rasterToMatch) {
   sppCols <- .sppCols(x)
   pctCols <- .pctCols(x)
   speciesPresent <- na.omit(unique(unlist(lapply(sppCols, function(sp) x[[sp]]))))
 
-  template <- raster(rtm * 0L)
+  template <- rasterToMatch * 0.0
+  x <- st_transform(x, st_crs(template))
   sppRasters <- lapply(seq_along(sppCols), function(i) {
     x_ <- x[!is.na(x[[sppCols[i]]]), ]
-    spp <- sort(unique(x_[[sppCols[i]]]))
-    xRas <- stack(lapply(spp, function(sp) {
-      ## percent cover, per species, using polygon with highest pixel-area covered
-      ## TODO: get area-weighted mean using all polygons in a pixel
-      xSp <- x_[x_[[sppCols[i]]] == sp, ]
-      xRasSp <- xIdx <- exactextractr::rasterize_polygons(xSp, template, min_coverage = 0.05) ## poly index
-      ids <- which(!is.na(xIdx[]))
-      xRasSp[ids] <- xSp[xIdx[ids], pctCols[i]][[pctCols[i]]] ## replace indices with actual species codes
+    if (nrow(x_) > 0) {
+      spp <- sort(unique(x_[[sppCols[i]]]))
+      xRas <- stack(lapply(spp, function(sp) {
+        ## percent cover, per species, using polygon with highest pixel-area covered
+        ## TODO: get area-weighted mean using all polygons in a pixel; use terra
+        xSp <- x_[x_[[sppCols[i]]] == sp, ]
+        xRasSp <- xIdx <- exactextractr::rasterize_polygons(xSp, template, min_coverage = 0.00) ## poly index
+        ids <- which(!is.na(xIdx[]))
+        xRasSp[ids] <- xSp[xIdx[ids], pctCols[i]][[pctCols[i]]] ## replace indices with actual species codes
 
-      return(xRasSp)
-    }))
-    names(xRas) <- spp
+        return(xRasSp)
+      }))
+      names(xRas) <- spp
+    } else {
+      xRas <- NULL
+    }
 
     return(xRas)
   })
+  sppRasters <- sppRasters[!sapply(sppRasters, is.null)] ## remove NULLs
 
   sppLayers <- lapply(speciesPresent, function(spp) {
     zlist <- lapply(sppRasters, function(x) {
@@ -132,11 +142,18 @@ casfriSpeciesLayers <- function(x, rtm) {
       y
     })
     zstck <- stack(zlist)
-    z <- sum(zstck, na.rm = TRUE)
+    z <- sum(zstck, na.rm = TRUE) ## TODO: improve this calc; weighted?
     names(z) <- spp
     z
   })
   names(sppLayers) <- speciesPresent
+
+  ## rescale all layers to be between 0 and 100 percent cover
+  for (sp in speciesPresent) {
+    sppLayers[[sp]] <- getValues(sppLayers[[sp]]) |>
+      .rescale(x = _, x.min = 0, new.min = 0, new.max = 100) |>
+      setValues(sppLayers[[sp]], values = _)
+  }
 
   stack(sppLayers)
 }

@@ -1,7 +1,11 @@
 Package: forestData
 Title: Tools for importing Canadian forestry data
 Description: Simplify importing of Canadian forestry data from various sources,
-    including CASFRI, NTEMS, and others.
+    including Common Attribute Schema for Forest Resource Inventories (CASFRI;
+    <https://casfri.github.io/CASFRI/>), National Terrestrial Ecosystem Monitoring System (NTEMS;
+    <https://opendata.nfis.org/mapserver/nfis-change_eng.html>),
+    National Ecosystem Framework for Canada
+    (<https://sis.agr.gc.ca/cansis/nsdb/ecostrat/gis_data.html>), and others.
 URL: https://github.com/FOR-CAST/forestData
 Date: 2022-03-20
 Version: 0.0.1
@@ -40,6 +44,7 @@ Remotes:
 BugReports: URL: https://github.com/FOR-CAST/forestData/issues
 Encoding: UTF-8
 Language: en-CA
+License: TBD
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Config/testthat/edition: 3
