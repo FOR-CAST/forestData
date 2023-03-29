@@ -1,3 +1,7 @@
+utils::globalVariables(c(
+  "..cols2keep", "cas_id"
+))
+
 .sppCols <- function(x) {
   grep("^species_[0-9]", colnames(x), value = TRUE, ignore.case = TRUE)
 }
@@ -12,7 +16,7 @@
 #' and create percent cover rasters for each species in an optionally provided study area.
 #'
 #' @param x Either a named list of file paths corresponding to exported CASFRI database files
-#' (see details), or a Postgresl database connection providing access to CASFRI database.
+#' (see details), or a Postgresql database connection providing access to CASFRI database.
 #'
 #' @param studyArea (optional) `sf` polygons object identifying the study area boundaries,
 #' used to extract a subset of the species cover data (i.e., spatial  intersection).
@@ -84,7 +88,7 @@ casfriSpeciesCover.list <- function(x, studyArea = NULL) {
 }
 
 #' @rdname casfri-species
-casfriSpeciesCover.PqConnection <- function(x, ...) {
+casfriSpeciesCover.PqConnection <- function(x, studyArea = NULL) {
   ## use parametrized queries, e.g.,
   # airport <- dbSendQuery(con, "SELECT * FROM airports WHERE faa = $1 or faa = $2")
   # dbBind(airport, list("GPT", "MSY"))
@@ -99,7 +103,7 @@ casfriSpeciesCover.PqConnection <- function(x, ...) {
 #'
 #' @export
 #' @importFrom exactextractr rasterize_polygons
-#' @importFrom raster raster stack
+#' @importFrom raster getValues raster setValues stack
 #' @rdname casfri-species
 casfriSpeciesLayers <- function(x, rasterToMatch) {
   sppCols <- .sppCols(x)

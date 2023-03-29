@@ -11,7 +11,7 @@ casfriSpeciesCover(x, studyArea = NULL)
 
 casfriSpeciesCover.list(x, studyArea = NULL)
 
-casfriSpeciesCover.PqConnection(x, ...)
+casfriSpeciesCover.PqConnection(x, studyArea = NULL)
 
 casfriSpeciesLayers(x, rasterToMatch)
 }

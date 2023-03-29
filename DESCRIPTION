@@ -1,5 +1,5 @@
 Package: forestData
-Title: Tools for importing Canadian forestry data
+Title: Tools for Importing Canadian Forestry Data
 Description: Simplify importing of Canadian forestry data from various sources,
     including Common Attribute Schema for Forest Resource Inventories (CASFRI;
     <https://casfri.github.io/CASFRI/>), National Terrestrial Ecosystem Monitoring System (NTEMS;
@@ -18,30 +18,29 @@ Depends:
 Imports:
     exactextractr,
     data.table,
-    DBI,
-    dplyr,
+    methods,
     reproducible,
-    RPostgres,
     sf,
-    SpaDES.tools,
     stats,
-    raster,
-    tools,
-    utils
+    raster
 Suggests:
     covr,
+    DBI,
     geodata,
     googledrive,
     knitr,
     RCurl,
+    RPostgres,
     rmarkdown,
     roxygen2,
+    sp,
+    SpaDES.tools,
     terra,
     testthat (>= 3.0.0)
 Remotes:
     PredictiveEcology/reproducible@development,
     PredictiveEcology/SpaDES.tools@development
-BugReports: URL: https://github.com/FOR-CAST/forestData/issues
+BugReports: https://github.com/FOR-CAST/forestData/issues
 Encoding: UTF-8
 Language: en-CA
 License: TBD

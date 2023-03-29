@@ -6,6 +6,7 @@
   CA_Forest_Wildfire = "https://opendata.nfis.org/downloads/forest_change/CA_Forest_Wildfire_dNBR_1985_2020.zip"
 )
 
+#' @importFrom reproducible Cache prepInputs
 .ntemsData <- function(destDir, studyArea = NULL, type = NULL) {
   if (is.null(type)) {
     stop("please specify NTEMS data type: see .ntemsURLs")
