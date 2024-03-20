@@ -7,7 +7,7 @@ Description: Simplify importing of Canadian forestry data from various sources,
     National Ecosystem Framework for Canada
     (<https://sis.agr.gc.ca/cansis/nsdb/ecostrat/gis_data.html>), and others.
 URL: https://github.com/FOR-CAST/forestData
-Date: 2022-03-20
+Date: 2024-03-20
 Version: 0.0.1
 Authors@R: c(
     person("Alex M", "Chubaty", , "achubaty@for-cast.ca", role = c("aut", "cre"),
