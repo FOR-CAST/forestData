@@ -43,7 +43,7 @@ Remotes:
 BugReports: https://github.com/FOR-CAST/forestData/issues
 Encoding: UTF-8
 Language: en-CA
-License: TBD
+License: GPL (>= 3)
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
 Config/testthat/edition: 3
