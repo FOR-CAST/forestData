@@ -21,4 +21,4 @@ remotes::install_github("FOR-CAST/forestData")
 
 ## Examples
 
-See the `examples` vignette.
+See the `CASFRI-examples` and `NTEMS-examples` vignettes.
