@@ -14,7 +14,7 @@ Authors@R: c(
            comment = c(ORCID = "0000-0001-7146-8135"))
   )
 Depends:
-    R (>= 4.1)
+    R (>= 4.2)
 Imports:
     exactextractr,
     data.table,
