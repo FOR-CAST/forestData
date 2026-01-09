@@ -3,3 +3,5 @@
 ^\.Rprofile$
 ^\.github$
 ^LICENSE\.md$
+^[.]?air[.]toml$
+^\.vscode$
