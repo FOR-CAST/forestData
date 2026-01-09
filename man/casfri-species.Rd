@@ -21,7 +21,7 @@ casfriSpeciesLayers(x, rasterToMatch)
 \item{studyArea}{(optional) \code{sf} polygons object identifying the study area boundaries,
 used to extract a subset of the species cover data (i.e., spatial  intersection).}
 
-\item{rasterToMatch}{template raster (\code{RasterLayer})}
+\item{rasterToMatch}{template raster (\code{SpatRaster})}
 }
 \value{
 \code{RasterStack}

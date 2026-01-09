@@ -38,7 +38,9 @@ utils::globalVariables(c(
 #' @rdname casfri-species
 casfriSpeciesCover <- function(x, studyArea = NULL) {
   # UseMethod("casfriSpeciesCover")
-  if (is.list(x) && all(tolower(names(x)) %in% c("geo", "hdr", "cas", "eco", "dst", "lyr", "nfl"))) {
+  if (
+    is.list(x) && all(tolower(names(x)) %in% c("geo", "hdr", "cas", "eco", "dst", "lyr", "nfl"))
+  ) {
     casfriSpeciesCover.list(x, studyArea)
   } else if (is(x, "PqConnection")) {
     casfriSpeciesCover.PqConnection(x, studyArea)
@@ -47,8 +49,6 @@ casfriSpeciesCover <- function(x, studyArea = NULL) {
   }
 }
 
-#' @importFrom data.table fread set setkey
-#' @importFrom sf st_crs st_intersection st_make_valid st_read st_transform
 #' @rdname casfri-species
 casfriSpeciesCover.list <- function(x, studyArea = NULL) {
   names(x) <- tolower(names(x))
@@ -71,15 +71,28 @@ casfriSpeciesCover.list <- function(x, studyArea = NULL) {
 
   ## see CASFRI error codes:
   ## <https://github.com/CASFRI/CASFRI/tree/master/documentation/specifications#Error_codes>
-  NA_chr <- c("EMPTY_STRING", "NULL_VALUE", "NOT_APPLICABLE", "UNKNOWN_VALUE",
-              "OUT_OF_RANGE", "NOT_IN_SET", "INVALID_VALUE", "WRONG_TYPE")
+  NA_chr <- c(
+    "EMPTY_STRING",
+    "NULL_VALUE",
+    "NOT_APPLICABLE",
+    "UNKNOWN_VALUE",
+    "OUT_OF_RANGE",
+    "NOT_IN_SET",
+    "INVALID_VALUE",
+    "WRONG_TYPE"
+  )
   NA_num <- c(-8886, -8887, -8888, -9995, -9997, -9998, -9999)
   cols2keep <- c("cas_id", .sppCols(lyr), .pctCols(lyr))
   lyr <- lyr[, ..cols2keep]
 
   for (i in seq_len(length(.sppCols(lyr)))) {
     set(lyr, which(lyr[[paste0("species_", i)]] %in% NA_chr), paste0("species_", i), NA_character_)
-    set(lyr, which(lyr[[paste0("species_per_", i)]] %in% NA_num), paste0("species_per_", i), NA_integer_)
+    set(
+      lyr,
+      which(lyr[[paste0("species_per_", i)]] %in% NA_num),
+      paste0("species_per_", i),
+      NA_integer_
+    )
   }
 
   casfri <- merge(geo, lyr, by = "cas_id")
@@ -97,13 +110,11 @@ casfriSpeciesCover.PqConnection <- function(x, studyArea = NULL) {
 }
 
 #' @param x `sf` object produced via `casfriSpeciesCover()`
-#' @param rasterToMatch template raster (`RasterLayer`)
+#' @param rasterToMatch template raster (`SpatRaster`)
 #'
 #' @return `RasterStack`
 #'
 #' @export
-#' @importFrom exactextractr rasterize_polygons
-#' @importFrom raster getValues raster setValues stack
 #' @rdname casfri-species
 casfriSpeciesLayers <- function(x, rasterToMatch) {
   sppCols <- .sppCols(x)

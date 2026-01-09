@@ -46,16 +46,12 @@ names(.ntemsTypesVLCE2) <- paste0("landcover", .ntemsVLCE2years)
 .ntemsBaseURL <- "https://opendata.nfis.org/downloads/forest_change/"
 .ntemsURLs <- lapply(.ntemsArchives, function(x) paste0(.ntemsBaseURL, x)) ## preserve names
 
-#' @importFrom reproducible Cache prepInputs
 .ntemsData <- function(destDir, studyArea = NULL, type = NULL) {
   if (is.null(type)) {
     stop("please specify valid NTEMS data type")
   } else {
     url <- .ntemsURLs[[type]]
   }
-
-  opt <- options(reproducible.useTerra = TRUE)
-  on.exit(options(opt), add = TRUE)
 
   x <- Cache({
     prepInputs(url = url, studyArea = studyArea, destinationPath = destDir)

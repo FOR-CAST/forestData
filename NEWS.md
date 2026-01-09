@@ -1,3 +1,9 @@
+# forestData (development version)
+
+* remove dependencies `raster`, `reproducible`, `SpaDES.tools`, `sp`;
+* add dependency `archive`;
+* add `scanfi()` for downloading SCANFI data;
+
 # forestData 0.0.2
 
 * drop support for R 4.1;

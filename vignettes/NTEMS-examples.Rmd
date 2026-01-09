@@ -23,19 +23,11 @@ knitr::opts_chunk$set(
 scratchPath <- ifelse(nzchar(Sys.getenv("SCRATCHDIR")), Sys.getenv("SCRATCHDIR"), tempdir())
 
 ## load packages
-library(sp)
 library(sf)
 library(terra)
-library(reproducible)
-library(SpaDES.tools)
 library(forestData)
 
 ## set package options
-options(
-  reproducible.cachePath = file.path(scratchPath, "cache"),
-  reproducible.useTerra = TRUE
-)
-
 terraOptions(
   memfrac = 0.2,
   tempdir = scratchPath
