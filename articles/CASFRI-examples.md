@@ -1,0 +1,84 @@
+# CASFRI examples
+
+## Using previously exported CASFRI data
+
+``` r
+
+## ensure you are working with enough temp scratch storage space!
+data_path <- "~/data/CASFRI/v5/Ontario"
+scratch_path <- ifelse(nzchar(Sys.getenv("SCRATCHDIR")), Sys.getenv("SCRATCHDIR"), tempdir())
+
+## load packages
+library(forestData)
+library(terra)
+
+## national data are large -- set terra to work on disk
+terraOptions(memfrac = 0.2, tempdir = scratch_path)
+
+## access (private) CASFRI Ring-of-Fire files on Google Drive
+googledrive::drive_auth()
+drive_files <- googledrive::as_id("1E8YjNA8AEt2J44R5z7jz1x799jU1X1J6") |>
+  googledrive::drive_ls()
+apply(drive_files, 1, function(f) {
+  if (!file.exists(file.path(data_path, f$name))) {
+    googledrive::drive_download(f, path = data_path)
+  }
+})
+
+casfri_files <- list(
+  geo = file.path(data_path, "CEON_ROF_casfri.gdb"), ## geometry attributes
+  hdr = file.path(data_path, "CEON_ROF_hdr.csv"),    ## header attributes
+  cas = file.path(data_path, "CEON_ROF_cas.csv"),    ## CAS base polygon attributes
+  eco = file.path(data_path, "CEON_ROF_eco.csv"),    ## ecological specific attributes
+  dst = file.path(data_path, "CEON_ROF_dst.csv"),    ## disturbance history attributes
+  lyr = file.path(data_path, "CEON_ROF_lyr.csv"),    ## forest-level attributes
+  nfl = file.path(data_path, "CEON_ROF_nfl.csv")     ## non-forest land attributes
+)
+
+## Ring-of-Fire study-area boundary
+rof_zip <- file.path(scratch_path, "ROF_RA_def.zip")
+googledrive::drive_download(
+  file = googledrive::as_id("1DzVRglqJNvZA8NZZ7XKe3-6Q5f8tlydQ"),
+  path = rof_zip,
+  overwrite = TRUE
+)
+workflowtools::archive_extract_once(rof_zip, dir = scratch_path)
+rof <- terra::vect(file.path(scratch_path, "ROF_RA_def.shp"))
+
+## restrict to a single ecodistrict
+small_study_area <- ecodistricts(destination_path = scratch_path, study_area = rof)
+small_study_area <- small_study_area[small_study_area$ECODISTRIC == 386, ]
+
+## NTEMS forest age raster as the template grid
+template_raster <- ntems("age", scratch_path, study_area = small_study_area)
+
+## build the CASFRI species percent-cover layers
+casfri_vect <- casfri_species_cover(casfri_files, study_area = small_study_area)
+casfri_rast <- casfri_species_layers(casfri_vect, template_raster)
+
+terra::plot(casfri_rast)
+```
+
+## Using the CASFRI database directly
+
+Only available to certain users with access to the CASFRI database.
+Requires an SSH tunnel.
+
+``` r
+
+## /!\ set up the ssh tunnel before attempting to connect /!\
+
+con <- DBI::dbConnect(
+  drv = RPostgres::Postgres(),
+  host = Sys.getenv("PGHOST"),
+  port = Sys.getenv("PGPORT"),
+  dbname = Sys.getenv("PGDATABASE"),
+  user = Sys.getenv("PGUSER"),
+  password = Sys.getenv("PGPASSWORD")
+)
+```
+
+## Using the public mapserver/geoserver REST API
+
+Support for the public CASFRI REST API is planned; see the [CASFRI
+project](https://casfri.github.io/CASFRI/) for current availability.

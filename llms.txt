@@ -1,0 +1,76 @@
+# forestData
+
+The goal of `forestData` is to simplify importing of Canadian forestry
+data, including:
+
+- National Ecosystem Framework for Canada
+  (<https://sis.agr.gc.ca/cansis/nsdb/ecostrat/gis_data.html>);
+- Common Attribute Schema for Forest Resource Inventories (CASFRI;
+  <https://casfri.github.io/CASFRI/>);
+- National Terrestrial Ecosystem Monitoring System (NTEMS,
+  <https://opendata.nfis.org/mapserver/nfis-change_eng.html>);
+- Satellite-Based Forest Inventory (SBFI) and the Spatialized Canadian
+  National Forest Inventory (SCANFI).
+
+## Installation
+
+You can install the development version of `forestData` from
+[GitHub](https://github.com/FOR-CAST/forestData) with:
+
+``` r
+
+# install.packages("pak")
+pak::pak("FOR-CAST/forestData")
+```
+
+`pak` reads the `Remotes:` field, so the GitHub-only dependencies
+(`spatialutils`, `workflowtools`) are installed automatically.
+
+## Examples
+
+See the `CASFRI-examples` and `NTEMS-examples` vignettes.
+
+# Package index
+
+## Package
+
+- [`forestData`](https://for-cast.github.io/forestData/reference/forestData-package.md)
+  [`forestData-package`](https://for-cast.github.io/forestData/reference/forestData-package.md)
+  **\[experimental\]** : Tools for Importing Canadian Forestry Data
+
+## Forest inventory data
+
+Download and prepare Canadian forest inventory products for a study
+area.
+
+- [`ntems()`](https://for-cast.github.io/forestData/reference/ntems.md)
+  : NTEMS data
+- [`scanfi()`](https://for-cast.github.io/forestData/reference/scanfi.md)
+  : SCANFI data
+- [`prep_species_layers_sbfi()`](https://for-cast.github.io/forestData/reference/prep_species_layers_sbfi.md)
+  : Prepare species-layer rasters from SBFI data
+- [`casfri_species_cover()`](https://for-cast.github.io/forestData/reference/casfri-species.md)
+  [`casfri_species_cover.list()`](https://for-cast.github.io/forestData/reference/casfri-species.md)
+  [`casfri_species_cover.PqConnection()`](https://for-cast.github.io/forestData/reference/casfri-species.md)
+  [`casfri_species_layers()`](https://for-cast.github.io/forestData/reference/casfri-species.md)
+  : CASFRI species cover data
+
+## Ecological boundaries
+
+National ecological framework polygons.
+
+- [`.ecoboundaries()`](https://for-cast.github.io/forestData/reference/ecoboundaries.md)
+  [`ecodistricts()`](https://for-cast.github.io/forestData/reference/ecoboundaries.md)
+  [`ecoregions()`](https://for-cast.github.io/forestData/reference/ecoboundaries.md)
+  [`ecoprovinces()`](https://for-cast.github.io/forestData/reference/ecoboundaries.md)
+  [`ecozones()`](https://for-cast.github.io/forestData/reference/ecoboundaries.md)
+  : National eco-boundaries
+
+# Articles
+
+### All vignettes
+
+- [CASFRI
+  examples](https://for-cast.github.io/forestData/articles/CASFRI-examples.md):
+- [NTEMS
+  examples](https://for-cast.github.io/forestData/articles/NTEMS-examples.md):
