@@ -13,10 +13,14 @@ area.
 
 - [`ntems()`](https://for-cast.github.io/forestData/reference/ntems.md)
   : NTEMS data
+- [`ntems_species_volume()`](https://for-cast.github.io/forestData/reference/ntems_species_volume.md)
+  : NTEMS species-weighted gross stem volume
 - [`scanfi()`](https://for-cast.github.io/forestData/reference/scanfi.md)
   : SCANFI data
 - [`prep_species_layers_sbfi()`](https://for-cast.github.io/forestData/reference/prep_species_layers_sbfi.md)
   : Prepare species-layer rasters from SBFI data
+- [`sbfi_species_volume()`](https://for-cast.github.io/forestData/reference/sbfi_species_volume.md)
+  : SBFI species-weighted gross stem volume
 - [`casfri_species_cover()`](https://for-cast.github.io/forestData/reference/casfri-species.md)
   [`casfri_species_cover.list()`](https://for-cast.github.io/forestData/reference/casfri-species.md)
   [`casfri_species_cover.PqConnection()`](https://for-cast.github.io/forestData/reference/casfri-species.md)

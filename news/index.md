@@ -1,5 +1,17 @@
 # Changelog
 
+## forestData 0.1.1
+
+- `ntems("volume")` fetches the NTEMS gross stem volume product.
+- [`ntems_species_volume()`](https://for-cast.github.io/forestData/reference/ntems_species_volume.md)
+  derives a species-weighted gross stem volume raster (NTEMS volume x
+  summed per-species likelihood share); only the requested species
+  layers are extracted from the large `ZIP64` archive.
+- [`sbfi_species_volume()`](https://for-cast.github.io/forestData/reference/sbfi_species_volume.md)
+  derives a species-weighted stand volume raster from the SBFI
+  geodatabase (volume x summed species area share), reading only the
+  tiles and columns needed.
+
 ## forestData 0.1.0
 
 ### Breaking changes
