@@ -1,15 +1,16 @@
-test_that("SCANFI url lookups work", {
-  types <- unname(unlist(.ntemsTypes))
-  zips <- names(.ntemsArchives)
-
-  expect_identical(length(types), length(zips))
-  expect_in(types, zips)
-  expect_in(zips, types)
+test_that("scanfi type resolver expands aliases and specific tokens", {
+  expect_setequal(
+    .scanfi_resolve_types("all"),
+    unname(c(.scanfi_structure, .scanfi_species, .scanfi_mask))
+  )
+  expect_setequal(.scanfi_resolve_types("species"), unname(.scanfi_species))
+  expect_setequal(.scanfi_resolve_types("structure"), unname(.scanfi_structure))
+  expect_setequal(
+    .scanfi_resolve_types(c("biomass", "blackSpruce")),
+    c("att_biomass", "spsCC_blackSpruce")
+  )
 })
 
-test_that("SCANFI download function works", {
-  ## CA_forest_harvest_recovery_rate.zip is smallest of the set (~49 MB)
-  postharvestrr <- ntems("harvestrecovery", tempdir())
-
-  unlink(terra::sources(postharvestrr))
+test_that("scanfi type resolver errors on unknown type", {
+  expect_snapshot(.scanfi_resolve_types("nonsense"), error = TRUE)
 })

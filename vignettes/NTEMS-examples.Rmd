@@ -5,7 +5,7 @@ vignette: >
   %\VignetteIndexEntry{NTEMS examples}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
+editor_options:
   chunk_output_type: console
 ---
 
@@ -20,32 +20,34 @@ knitr::opts_chunk$set(
 
 ```{r, eval = FALSE}
 ## ensure you are working with enough temp scratch storage space!
-scratchPath <- ifelse(nzchar(Sys.getenv("SCRATCHDIR")), Sys.getenv("SCRATCHDIR"), tempdir())
+scratch_path <- ifelse(nzchar(Sys.getenv("SCRATCHDIR")), Sys.getenv("SCRATCHDIR"), tempdir())
 
 ## load packages
-library(sf)
 library(terra)
 library(forestData)
 
-## set package options
+## national rasters are large -- set terra to work on disk
 terraOptions(
   memfrac = 0.2,
-  tempdir = scratchPath
+  tempdir = scratch_path
 )
 
-## random study area in central Alberta
-studyArea <- SpatialPoints(data.frame(lon = -115, lat = 55), proj4string = CRS("EPSG:4326")) |>
-  st_as_sf() |>
-  st_transform(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
-                     "+x_0=0 +y_0=0 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")) |>
-  vect() |>
-  randomStudyArea(center = _, seed = 60, size = 1e10) |>
-  st_as_sf()
+## study area: a ~100 km buffer around a point in central Alberta
+lcc <- paste(
+  "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
+  "+x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+)
+study_area <- terra::vect(cbind(-115, 55), crs = "EPSG:4326") |>
+  terra::project(lcc) |>
+  terra::buffer(1e5)
 
-## CA_forest_harvest_recovery_rate.zip is smallest of the NTEMS archives (~49 MB)
-postharvestrr <- ntems("harvestrecovery", tempdir(), studyArea = studyArea)
+## CA_forest_harvest_recovery_rate.zip is smallest of the NTEMS archives (~49 MB).
+## Only the study-area window is returned.
+post_harvest_rr <- ntems("harvestrecovery", scratch_path, study_area = study_area)
+
+terra::plot(post_harvest_rr)
 ```
 
 ```{r cleanup, eval = FALSE, include = FALSE}
-unlink(terra::sources(postharvestrr))
+unlink(terra::sources(post_harvest_rr))
 ```

@@ -7,36 +7,25 @@ test_that("rescale works correctly", {
   x <- 0:100
 
   x1 <- .rescale(x)
-  expect_lt(min(x1), max(x1))
   expect_equal(min(x1), 0)
   expect_equal(max(x1), 1)
 
   x2 <- .rescale(x, new.min = -1, new.max = 1)
-  expect_lt(min(x2), max(x2))
   expect_equal(min(x2), -1)
   expect_equal(max(x2), 1)
 
-  ## rescaling values of a raster
-  f <- system.file("external/test.grd", package = "raster")
-  r <- raster::raster(f)
+  # a constant vector is returned unchanged
+  expect_equal(.rescale(rep(0, 5)), rep(0, 5))
+})
 
-  r1 <- raster::getValues(r) |>
-    .rescale() |>
-    raster::setValues(r, values = _)
-  expect_lt(raster::minValue(r1), raster::maxValue(r1))
-  expect_equal(raster::minValue(r1), 0)
-  expect_equal(raster::maxValue(r1), 1)
+test_that("rescale works on SpatRaster values", {
+  r <- terra::rast(nrows = 10, ncols = 10, vals = 0:99)
 
-  r2 <- raster::getValues(r) |>
-    .rescale(new.min = -1, new.max = 1) |>
-    raster::setValues(r, values = _)
-  expect_lt(raster::minValue(r2), raster::maxValue(r2))
-  expect_equal(raster::minValue(r2), -1)
-  expect_equal(raster::maxValue(r2), 1)
+  r1 <- terra::setValues(r, .rescale(terra::values(r, mat = FALSE)))
+  expect_equal(min(terra::values(r1)), 0)
+  expect_equal(max(terra::values(r1)), 1)
 
-  r[] <- 0
-  r3 <- raster::getValues(r) |>
-    .rescale() |>
-    raster::setValues(r, values = _)
-  expect_equal(r, r3)
+  r2 <- terra::setValues(r, .rescale(terra::values(r, mat = FALSE), new.min = -1, new.max = 1))
+  expect_equal(min(terra::values(r2)), -1)
+  expect_equal(max(terra::values(r2)), 1)
 })

@@ -1,0 +1,26 @@
+url: https://for-cast.github.io/forestData
+
+template:
+  bootstrap: 5
+
+reference:
+- title: Package
+  contents:
+  - forestData-package
+- title: Forest inventory data
+  desc: >
+    Download and prepare Canadian forest inventory products for a study area.
+  contents:
+  - ntems
+  - scanfi
+  - prep_species_layers_sbfi
+  - casfri_species_cover
+  - casfri_species_layers
+- title: Ecological boundaries
+  desc: >
+    National ecological framework polygons.
+  contents:
+  - ecozones
+  - ecoprovinces
+  - ecoregions
+  - ecodistricts
