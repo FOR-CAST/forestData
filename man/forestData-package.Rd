@@ -6,17 +6,26 @@
 \alias{forestData-package}
 \title{Tools for Importing Canadian Forestry Data}
 \description{
-Simplify importing of Canadian forestry data from various sources, including Common Attribute Schema for Forest Resource Inventories (CASFRI; \url{https://casfri.github.io/CASFRI/}), National Terrestrial Ecosystem Monitoring System (NTEMS; \url{https://opendata.nfis.org/mapserver/nfis-change_eng.html}), National Ecosystem Framework for Canada (\url{https://sis.agr.gc.ca/cansis/nsdb/ecostrat/gis_data.html}), and others.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+
+Simplify importing of Canadian forestry data from various sources (CASFRI,
+NTEMS, SCANFI, SBFI, and the National Ecosystem Framework).
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/FOR-CAST/forestData}
+  \item \url{https://for-cast.github.io/forestData/}
   \item Report bugs at \url{https://github.com/FOR-CAST/forestData/issues}
 }
 
 }
 \author{
 \strong{Maintainer}: Alex M Chubaty \email{achubaty@for-cast.ca} (\href{https://orcid.org/0000-0001-7146-8135}{ORCID})
+
+Authors:
+\itemize{
+  \item Alex M Chubaty \email{achubaty@for-cast.ca} (\href{https://orcid.org/0000-0001-7146-8135}{ORCID})
+}
 
 }
