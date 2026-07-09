@@ -1,6 +1,6 @@
 Package: forestData
 Title: Tools for Importing Canadian Forestry Data
-Version: 0.1.0
+Version: 0.1.1
 Date: 2026-01-08
 Authors@R: 
     person("Alex M", "Chubaty", , "achubaty@for-cast.ca", role = c("aut", "cre"),

@@ -21,6 +21,7 @@ names(.ntems_types_vlce2) <- paste0("landcover", .ntems_vlce2_years)
   CA_forest_harvest_years2recovery = "CA_forest_harvest_years2recovery.zip",
   CA_forest_lead_tree_species = "CA_forest_lead_tree_species.zip",
   CA_forest_tree_species_probabilities = "CA_forest_tree_species_probabilities.zip",
+  CA_gross_stem_volume = "CA_gross_stem_volume_2022.zip",
   CA_Forest_Satellite_Based_Inventory = "CA_Forest_Satellite_Based_Inventory_2020.zip",
   CA_Forest_Wildfire = "CA_Forest_Wildfire_dNBR_1985_2020.zip"
 ) |>
@@ -40,6 +41,7 @@ names(.ntems_types_vlce2) <- paste0("landcover", .ntems_vlce2_years)
   leadingspecies = "CA_forest_lead_tree_species",
   sbfi = "CA_Forest_Satellite_Based_Inventory",
   speciesprobs = "CA_forest_tree_species_probabilities",
+  volume = "CA_gross_stem_volume",
   wildfirednbr = "CA_Forest_Wildfire"
 ) |>
   append(.ntems_types_vlce2)
