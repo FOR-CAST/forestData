@@ -20,6 +20,7 @@
 #'   terra::vect() |>
 #'   SpaDES.tools::randomStudyArea(center = _, seed = 60, size = 1e10) |>
 #'   sf::st_as_sf()
+#' ## TODO: remove SpaDES.tools -- save the test study area shp in the pkg
 #' \donttest{
 #' ezs <- ecozones(studyArea = studyArea)
 #' plot(ezs["ZONE_NAME"], main = "ecozones in study area")
@@ -57,13 +58,15 @@
   if (!is.null(studyArea) && is(studyArea, "SpatialPolygons")) {
     studyArea <- sf::st_as_sf(studyArea)
   }
-
-  tmp <- prepInputs(url = url,
-                    destinationPath = destinationPath,
-                    studyArea = studyArea,
-                    rasterToMatch = rasterToMatch,
-                    fun = "sf::st_read",
-                    overwrite = TRUE) ## TODO: doesn't reproject -- fix upstream?
+  ## TODO: remove reproducible
+  tmp <- prepInputs(
+    url = url,
+    destinationPath = destinationPath,
+    studyArea = studyArea,
+    rasterToMatch = rasterToMatch,
+    fun = "sf::st_read",
+    overwrite = TRUE
+  ) ## TODO: doesn't reproject -- fix upstream?
   tmp <- st_collection_extract(tmp, "POLYGON") |>
     st_make_valid()
 

@@ -127,6 +127,7 @@ casfriSpeciesLayers <- function(x, rasterToMatch) {
     x_ <- x[!is.na(x[[sppCols[i]]]), ]
     if (nrow(x_) > 0) {
       spp <- sort(unique(x_[[sppCols[i]]]))
+      ## TODO: use terra instead of raster
       xRas <- stack(lapply(spp, function(sp) {
         ## percent cover, per species, using polygon with highest pixel-area covered
         ## TODO: get area-weighted mean using all polygons in a pixel; use terra

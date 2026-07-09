@@ -53,6 +53,7 @@ names(.ntemsTypesVLCE2) <- paste0("landcover", .ntemsVLCE2years)
     url <- .ntemsURLs[[type]]
   }
 
+  ## TODO: remove reproducible
   x <- Cache({
     prepInputs(url = url, studyArea = studyArea, destinationPath = destDir)
   })
