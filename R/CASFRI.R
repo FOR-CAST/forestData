@@ -2,12 +2,12 @@ utils::globalVariables(c(
   "..cols2keep", "cas_id"
 ))
 
-.sppCols <- function(x) {
-  grep("^species_[0-9]", colnames(x), value = TRUE, ignore.case = TRUE)
+.spp_cols <- function(x) {
+  grep("^species_[0-9]", names(x), value = TRUE, ignore.case = TRUE)
 }
 
-.pctCols <- function(x) {
-  grep("^species_per_[0-9]", colnames(x), value = TRUE, ignore.case = TRUE)
+.pct_cols <- function(x) {
+  grep("^species_per_[0-9]", names(x), value = TRUE, ignore.case = TRUE)
 }
 
 #' CASFRI species cover data
@@ -18,8 +18,10 @@ utils::globalVariables(c(
 #' @param x Either a named list of file paths corresponding to exported CASFRI database files
 #' (see details), or a Postgresql database connection providing access to CASFRI database.
 #'
-#' @param studyArea (optional) `sf` polygons object identifying the study area boundaries,
-#' used to extract a subset of the species cover data (i.e., spatial  intersection).
+#' @param study_area (optional) `SpatVector` (or `sf`) polygons identifying the study area
+#' boundaries, used to extract a subset of the species cover data (spatial intersection).
+#'
+#' @return A `SpatVector` of CASFRI polygons with the joined species/percent-cover attributes.
 #'
 #' @details If `x` is a list, it must be a named list with elements corresponding to
 #' each of the CAS tables (e.g., `.csv` files) and a geodatabase file (`.gdb`):
@@ -35,39 +37,37 @@ utils::globalVariables(c(
 #' See <https://github.com/CASFRI/CASFRI/tree/master/documentation/specifications#common-attribute-schema>
 #' for full details.
 #'
+#' @export
 #' @rdname casfri-species
-casfriSpeciesCover <- function(x, studyArea = NULL) {
-  # UseMethod("casfriSpeciesCover")
+casfri_species_cover <- function(x, study_area = NULL) {
+  # UseMethod("casfri_species_cover")
   if (
     is.list(x) && all(tolower(names(x)) %in% c("geo", "hdr", "cas", "eco", "dst", "lyr", "nfl"))
   ) {
-    casfriSpeciesCover.list(x, studyArea)
+    casfri_species_cover.list(x, study_area)
   } else if (is(x, "PqConnection")) {
-    casfriSpeciesCover.PqConnection(x, studyArea)
+    casfri_species_cover.PqConnection(x, study_area)
   } else {
     stop("x must be a named list of filenames or a postpgresql database connection")
   }
 }
 
 #' @rdname casfri-species
-casfriSpeciesCover.list <- function(x, studyArea = NULL) {
+casfri_species_cover.list <- function(x, study_area = NULL) {
   names(x) <- tolower(names(x))
 
   ## TODO: rework this once the mapserver/geoserver API is active and working;
   ##       REST API will serve (zipped) flat files of the denormalized data.
-  geo <- st_read(x$geo)
-  lyr <- fread(x$lyr)
+  geo <- terra::vect(x$geo)
+  lyr <- data.table::fread(x$lyr)
 
-  if (!is.null(studyArea)) {
-    geo <- studyArea |>
-      st_transform(st_crs(geo)) |>
-      st_intersection(geo) |>
-      st_make_valid()
-
+  if (!is.null(study_area)) {
+    ## clip geo to the study area, keeping geo's own CRS
+    geo <- spatialutils::prep_vector(geo, studyArea = study_area, crs = terra::crs(geo))
     lyr <- lyr[cas_id %in% geo$cas_id, ]
   }
 
-  setkey(lyr, "cas_id")
+  data.table::setkey(lyr, "cas_id")
 
   ## see CASFRI error codes:
   ## <https://github.com/CASFRI/CASFRI/tree/master/documentation/specifications#Error_codes>
@@ -82,12 +82,17 @@ casfriSpeciesCover.list <- function(x, studyArea = NULL) {
     "WRONG_TYPE"
   )
   NA_num <- c(-8886, -8887, -8888, -9995, -9997, -9998, -9999)
-  cols2keep <- c("cas_id", .sppCols(lyr), .pctCols(lyr))
+  cols2keep <- c("cas_id", .spp_cols(lyr), .pct_cols(lyr))
   lyr <- lyr[, ..cols2keep]
 
-  for (i in seq_len(length(.sppCols(lyr)))) {
-    set(lyr, which(lyr[[paste0("species_", i)]] %in% NA_chr), paste0("species_", i), NA_character_)
-    set(
+  for (i in seq_len(length(.spp_cols(lyr)))) {
+    data.table::set(
+      lyr,
+      which(lyr[[paste0("species_", i)]] %in% NA_chr),
+      paste0("species_", i),
+      NA_character_
+    )
+    data.table::set(
       lyr,
       which(lyr[[paste0("species_per_", i)]] %in% NA_num),
       paste0("species_per_", i),
@@ -95,13 +100,11 @@ casfriSpeciesCover.list <- function(x, studyArea = NULL) {
     )
   }
 
-  casfri <- merge(geo, lyr, by = "cas_id")
-
-  return(casfri)
+  terra::merge(geo, lyr, by = "cas_id")
 }
 
 #' @rdname casfri-species
-casfriSpeciesCover.PqConnection <- function(x, studyArea = NULL) {
+casfri_species_cover.PqConnection <- function(x, study_area = NULL) {
   ## use parametrized queries, e.g.,
   # airport <- dbSendQuery(con, "SELECT * FROM airports WHERE faa = $1 or faa = $2")
   # dbBind(airport, list("GPT", "MSY"))
@@ -109,67 +112,20 @@ casfriSpeciesCover.PqConnection <- function(x, studyArea = NULL) {
   # dbClearResult(airport)
 }
 
-#' @param x `sf` object produced via `casfriSpeciesCover()`
-#' @param rasterToMatch template raster (`SpatRaster`)
+#' @param x `SpatVector` produced via `casfri_species_cover()` (an `sf` object or a
+#'   source readable by [terra::vect()] is also accepted).
+#' @param raster_to_match template `SpatRaster` defining the output grid and CRS.
 #'
-#' @return `RasterStack`
+#' @return A `SpatRaster` with one percent-cover layer (0-100) per species.
 #'
 #' @export
 #' @rdname casfri-species
-casfriSpeciesLayers <- function(x, rasterToMatch) {
-  sppCols <- .sppCols(x)
-  pctCols <- .pctCols(x)
-  speciesPresent <- na.omit(unique(unlist(lapply(sppCols, function(sp) x[[sp]]))))
-
-  template <- rasterToMatch * 0.0
-  x <- st_transform(x, st_crs(template))
-  sppRasters <- lapply(seq_along(sppCols), function(i) {
-    x_ <- x[!is.na(x[[sppCols[i]]]), ]
-    if (nrow(x_) > 0) {
-      spp <- sort(unique(x_[[sppCols[i]]]))
-      ## TODO: use terra instead of raster
-      xRas <- stack(lapply(spp, function(sp) {
-        ## percent cover, per species, using polygon with highest pixel-area covered
-        ## TODO: get area-weighted mean using all polygons in a pixel; use terra
-        xSp <- x_[x_[[sppCols[i]]] == sp, ]
-        xRasSp <- xIdx <- exactextractr::rasterize_polygons(xSp, template, min_coverage = 0.00) ## poly index
-        ids <- which(!is.na(xIdx[]))
-        xRasSp[ids] <- xSp[xIdx[ids], pctCols[i]][[pctCols[i]]] ## replace indices with actual species codes
-
-        return(xRasSp)
-      }))
-      names(xRas) <- spp
-    } else {
-      xRas <- NULL
-    }
-
-    return(xRas)
-  })
-  sppRasters <- sppRasters[!sapply(sppRasters, is.null)] ## remove NULLs
-
-  sppLayers <- lapply(speciesPresent, function(spp) {
-    zlist <- lapply(sppRasters, function(x) {
-      y <- if (spp %in% names(x)) {
-        x[[spp]]
-      } else {
-        template
-      }
-      names(y) <- spp
-      y
-    })
-    zstck <- stack(zlist)
-    z <- sum(zstck, na.rm = TRUE) ## TODO: improve this calc; weighted?
-    names(z) <- spp
-    z
-  })
-  names(sppLayers) <- speciesPresent
-
-  ## rescale all layers to be between 0 and 100 percent cover
-  for (sp in speciesPresent) {
-    sppLayers[[sp]] <- getValues(sppLayers[[sp]]) |>
-      .rescale(x = _, x.min = 0, new.min = 0, new.max = 100) |>
-      setValues(sppLayers[[sp]], values = _)
+casfri_species_layers <- function(x, raster_to_match) {
+  if (!inherits(x, "SpatVector")) {
+    x <- terra::vect(x)
   }
-
-  stack(sppLayers)
+  if (!inherits(raster_to_match, "SpatRaster")) {
+    raster_to_match <- terra::rast(raster_to_match)
+  }
+  .species_pct_layers(x, .spp_cols(x), .pct_cols(x), raster_to_match)
 }

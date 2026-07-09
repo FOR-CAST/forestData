@@ -4,21 +4,72 @@
 \alias{scanfi}
 \title{SCANFI data}
 \usage{
-scanfi(type = "all", destDir = NULL, studyArea = NULL)
+scanfi(
+  type = "all",
+  years = 2020L,
+  flavour = c("public", "private"),
+  dest_dir = NULL,
+  study_area = NULL,
+  drive_folder = "1i7w4tO52Sh45tRwlUiUEnwidOeE5Zq68"
+)
 }
 \arguments{
-\item{type}{character, specifying which SCANFI product to download and prepare
-(currently, only "all" is supported).}
+\item{type}{character vector of layer types to fetch (see Details).}
 
-\item{destDir}{character, specifying the destination directory in which to download
-and extract the data (defaults to current working directory).}
+\item{years}{integer year(s) to fetch (v2 spans 1985-2025 in 5-year steps).}
 
-\item{studyArea}{(optional) \code{sf} polygon to which the national raster will be cropped and masked.}
+\item{flavour}{one of \code{"public"} (default) or \code{"private"} (see Details).}
+
+\item{dest_dir}{character, destination directory for downloads
+(defaults to a subdirectory of \code{\link[=tempdir]{tempdir()}}).}
+
+\item{study_area}{(optional) \code{SpatVector} (or \code{sf}) to which the rasters are
+cropped and masked.}
+
+\item{drive_folder}{Google Drive folder id for the \code{"private"} flavour.}
 }
 \value{
-\code{SpatRaster}
+\code{SpatRaster} (one layer per downloaded SCANFI file).
 }
 \description{
-Get and prepare SCANFI 2020 data
-(\url{https://open.canada.ca/data/en/dataset/18e6a919-53fd-41ce-b4e2-44a9707c52dc}).
+Get and prepare SCANFI v2 (Spatialized Canadian National Forest Inventory)
+data as a \code{SpatRaster}. SCANFI provides wall-to-wall 30 m maps of forest
+structure, composition, biomass, and age for Canada (Guindon et al. 2026;
+\doi{10.23687/07653869-f303-46c2-a04e-9ab479b73cbf}).
+}
+\details{
+\code{type} selects which layers to fetch; it accepts the group aliases \code{"all"}
+(default), \code{"structure"}, and \code{"species"}, and/or any of the specific tokens
+below. National data are large, so only the requested layers are downloaded
+(public flavour) and rasters are read lazily -- when \code{study_area} is supplied,
+only that window is read from disk.
+
+Structural attributes and age (one layer per requested \code{years}):
+\itemize{
+\item \code{biomass}: aboveground biomass (t/ha);
+\item \code{closure}: total crown closure (\%);
+\item \code{height}: forest height (m);
+\item \code{landcover}: NFI-compatible land cover classification;
+\item \code{age}: forest stand age (years).
+}
+
+Tree-species crown closure (\%; \code{"species"} selects all):
+\itemize{
+\item \code{balsamFir}, \code{blackSpruce}, \code{broadleaf}, \code{douglasFir}, \code{jackPine},
+\code{lodgepolePine}, \code{otherConiferous}, \code{ponderosaPine}, \code{tamarack},
+\code{whiteRedPine}.
+}
+
+Other:
+\itemize{
+\item \code{mask}: northern-extrapolation mask (year-agnostic integer mask).
+}
+
+Two flavours are available:
+\itemize{
+\item \code{"public"}: the NRCan public v2 product (https://ftp.maps.canada.ca/pub/nrcan_rncan/Forests_Foret/SCANFI/v2),
+holding the full 1985-2025 time series (5-year steps);
+\item \code{"private"}: a periodically-updated Google Drive dataset (2000, 2010,
+2020), which requires the \pkg{googledrive} package and Drive authentication.
+}
 }

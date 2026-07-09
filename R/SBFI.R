@@ -1,116 +1,69 @@
-#' Prepare species layer rasters from SBFI data
+#' Prepare species-layer rasters from SBFI data
 #'
-#' @param gdbFile character specifying the path to the SBFI gdb file
-#' @param studyArea `SpatVector` polygons object
-#' @param rasterToMatch `SpatRaster` object
+#' Build per-species percent-cover `SpatRaster` layers from the Satellite-Based
+#' Forest Inventory (SBFI) 2020 geodatabase for a study area. Only the SBFI grid
+#' tiles intersecting `study_area` are read, and only the species columns are
+#' loaded, since the national geodatabase is large.
+#'
+#' @param gdb_file character, path to the SBFI `.gdb`.
+#' @param study_area `SpatVector` (or `sf`) polygons defining the area of interest.
+#' @param raster_to_match template `SpatRaster` defining the output grid and CRS.
+#'
+#' @return `SpatRaster` with one percent-cover layer per species.
 #'
 #' @export
-prepSpeciesLayers_SBFI <- function(gdbFile, studyArea, rasterToMatch) {
-  if (!inherits(studyArea, "SpatVector")) {
-    studyArea <- terra::vect(rasterToMatch)
+prep_species_layers_sbfi <- function(gdb_file, study_area, raster_to_match) {
+  if (!inherits(raster_to_match, "SpatRaster")) {
+    raster_to_match <- terra::rast(raster_to_match)
   }
-  if (!inherits(rasterToMatch, "SpatRaster")) {
-    rasterToMatch <- terra::rast(rasterToMatch)
+  if (!inherits(study_area, "SpatVector")) {
+    study_area <- terra::vect(study_area)
   }
-  sbfi2020_grid <- terra::vect(gdbFile, layer = "_Grid_forested_ecosystem")
-  sbfi2020_crs <- terra::crs(sbfi2020_grid)
 
-  sbfi2020_grid_ids <- terra::intersect(studyArea, sbfi2020_grid) |>
-    tidyterra::select(Id) |>
-    tidyterra::pull(Id)
+  ## SBFI grid of forested-ecosystem tiles; spatially prefilter to the study area
+  ## so only the intersecting tiles are read (never the whole national gdb)
+  grid <- terra::vect(gdb_file, layer = "_Grid_forested_ecosystem")
+  aoi <- terra::project(study_area, terra::crs(grid))
+  tile_ids <- grid[aoi, ]$Id
 
-  sbfi2020_grid_studyArea <- sbfi2020_grid |> tidyterra::filter(Id %in% sbfi2020_grid_ids)
+  if (length(tile_ids) == 0L) {
+    stop("study_area does not intersect any SBFI tiles")
+  }
 
-  sbfi2020_tile_names <- glue::glue("CA_2020_tile_{sbfi2020_grid_ids}_metrics")
+  spp_cols <- sprintf("SPECIES_%d", 1:5)
+  pct_cols <- sprintf("SPECIES_%d_PERC", 1:5)
 
-  sbfi2020_tile_rasters <- lapply(sbfi2020_tile_names, function(lyr) {
-    layer <- terra::vect(gdbFile, layer = lyr) |>
-      tidyterra::select(dplyr::matches("^(SPECIES_[1-5]|SPECIES_[1-5]_PERC)$"))
-
-    speciesPresent <- tidyterra::select(layer, dplyr::matches("^SPECIES_[1-5]$")) |>
-      as.data.frame() |>
-      apply(2, unique) |>
-      unlist(use.names = FALSE) |>
-      unique() |>
-      trimws() |>
-      stringr::str_subset(".+") |>
-      sort()
-
-    template <- terra::deepcopy(rasterToMatch) * 0.0
-
-    sppCols <- tidyterra::select(layer, dplyr::matches("^SPECIES_[1-5]$")) |>
-      as.data.frame() |>
-      colnames()
-    pctCols <- dplyr::select(layer, dplyr::matches("^SPECIES_[1-5]_PERC$")) |>
-      as.data.frame() |>
-      colnames()
-
-    sppRastersList <- lapply(seq_along(sppCols), function(i) {
-      vri <- tidyterra::filter(layer, !is.na(!!sppCols[i]))
-      spp <- tidyterra::pull(vri, sppCols[i]) |>
-        unique() |>
-        sort() |>
-        trimws() |>
-        stringr::str_subset(".+")
-      vriRas <- lapply(spp, function(sp) {
-        ## percent cover, per species, using polygon with highest pixel-area covered
-        ## TODO: get area-weighted mean using all polygons in a pixel
-        vriSp <- tidyterra::filter(vri, .data[[sppCols[i]]] == sp)
-
-        f_Idx <- tempfile("rast_", fileext = ".tif")
-        vriIdx <- exactextractr::rasterize_polygons(
-          sf::st_as_sf(vriSp),
-          template,
-          min_coverage = 0.05
-        ) |>
-          terra::writeRaster(filename = f_Idx)
-
-        vriRasSp <- terra::deepcopy(vriIdx)
-
-        gc(verbose = FALSE)
-
-        ## replace indices with actual species codes
-        idx_vals <- terra::values(vriIdx, mat = FALSE)
-        ids <- which(!is.na(idx_vals))
-
-        f_RasSp <- tempfile("rast_", fileext = ".tif")
-        vriRasSp[ids] <- vriSp[idx_vals[ids], pctCols[i]][[pctCols[i]]]
-        vriRasSp <- terra::writeRaster(vriRasSp, filename = f_RasSp)
-
-        rm(ids, idx_vals)
-        unlink(f_Idx)
-
-        return(vriRasSp)
-      }) |>
-        terra::rast()
-      names(vriRas) <- spp
-
-      gc(verbose = FALSE)
-
-      return(vriRas)
-    })
-
-    sppLayersList <- lapply(speciesPresent, function(spp) {
-      z <- lapply(sppRastersList, function(x) {
-        y <- if (spp %in% names(x)) {
-          x[[spp]]
-        } else {
-          template
-        }
-        names(y) <- spp
-        y
-      }) |>
-        terra::rast() |>
-        sum(na.rm = TRUE)
-      names(z) <- spp
-      gc(verbose = FALSE)
-
-      return(z)
-    })
-    names(sppLayersList) <- speciesPresent
-
-    terra::rast(sppLayersList)
+  tile_rasters <- lapply(tile_ids, function(id) {
+    lyr <- sprintf("CA_2020_tile_%s_metrics", id)
+    ## read only the species columns for this tile
+    v <- terra::vect(
+      gdb_file,
+      layer = lyr,
+      query = sprintf("SELECT %s FROM \"%s\"", paste(c(spp_cols, pct_cols), collapse = ", "), lyr)
+    )
+    .species_pct_layers(v, spp_cols, pct_cols, raster_to_match)
   })
 
-  terra::mosaic(sbfi2020_tile_names) ## TODO
+  if (length(tile_rasters) == 1L) {
+    return(tile_rasters[[1]])
+  }
+
+  ## mosaic each species across the tiles that contain it (tiles may hold
+  ## different species sets)
+  all_species <- sort(unique(unlist(lapply(tile_rasters, names))))
+  layers <- lapply(all_species, function(sp) {
+    with_sp <- Filter(
+      Negate(is.null),
+      lapply(tile_rasters, function(r) if (sp %in% names(r)) r[[sp]] else NULL)
+    )
+    m <- if (length(with_sp) == 1L) {
+      with_sp[[1]]
+    } else {
+      terra::mosaic(terra::sprc(with_sp), fun = "max")
+    }
+    names(m) <- sp
+    m
+  })
+
+  terra::rast(layers)
 }
