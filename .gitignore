@@ -34,3 +34,6 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 inst/doc
+
+# local TODO tracking (not committed)
+_TODO.md

@@ -1,6 +1,6 @@
 Package: forestData
 Title: Tools for Importing Canadian Forestry Data
-Version: 0.0.2.9000
+Version: 0.1.0
 Date: 2026-01-08
 Authors@R: 
     person("Alex M", "Chubaty", , "achubaty@for-cast.ca", role = c("aut", "cre"),
@@ -13,40 +13,38 @@ Description: Simplify importing of Canadian forestry data from various
     Ecosystem Framework for Canada
     (<https://sis.agr.gc.ca/cansis/nsdb/ecostrat/gis_data.html>), and
     others.
-License: GPL (>= 3)
-URL: https://github.com/FOR-CAST/forestData
+License: Apache License (>= 2)
+URL: https://github.com/FOR-CAST/forestData, https://for-cast.github.io/forestData/
 BugReports: https://github.com/FOR-CAST/forestData/issues
 Depends:
-    R (>= 4.2)
+    R (>= 4.4)
 Imports:
-    archive,
+    curl,
     data.table,
-    dplyr,
     exactextractr,
-    glue,
-    httr2,
     methods,
-    RCurl,
     sf,
-    stats,
-    stringr,
+    spatialutils,
     terra,
-    tidyterra,
-    XML
+    workflowtools
 Suggests:
     covr,
     DBI,
     geodata,
     googledrive,
     knitr,
+    lifecycle,
     rmarkdown,
     roxygen2,
     RPostgres,
     testthat (>= 3.0.0)
+Remotes:
+    FOR-CAST/spatialutils,
+    FOR-CAST/workflowtools
 VignetteBuilder: 
     knitr
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-CA
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
+Config/roxygen2/version: 8.0.0

@@ -5,3 +5,7 @@
 ^LICENSE\.md$
 ^[.]?air[.]toml$
 ^\.vscode$
+^_TODO\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
