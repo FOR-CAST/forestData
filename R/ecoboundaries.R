@@ -5,121 +5,114 @@
 #' @param type character. The polygon type to use:
 #'             Must be one of "ECODISTRICT", "ECOREGION", "ECOPROVINCE", or "ECOZONE".
 #'
-#' @param destinationPath character. Path to directory where data will be downloaded.
+#' @param destination_path character. Path to directory where data will be downloaded.
 #'
-#' @param studyArea (optional) `sf` object corresponding to the study area of interest.
+#' @param study_area (optional) `SpatVector` (or `sf`) polygons defining the study
+#'   area of interest. When supplied, the boundaries are cropped, masked, and
+#'   reprojected to it (via [spatialutils::prep_vector()]).
 #'
-#' @param rasterToMatch (optional) template raster to use.
+#' @param raster_to_match (optional) template `SpatRaster`; when supplied, the
+#'   returned vector is reprojected to its CRS.
+#'
+#' @return A `SpatVector` of the requested eco-boundary polygons.
 #'
 #' @examples
-#' ## random study area in central Alberta
-#' studyArea <- SpatialPoints(data.frame(lon = -115, lat = 55), proj4string = CRS("EPSG:4326")) |>
-#'   sf::st_as_sf() |>
-#'   sf::st_transform(paste("+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
-#'                    "+x_0=0 +y_0=0 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")) |>
-#'   terra::vect() |>
-#'   SpaDES.tools::randomStudyArea(center = _, seed = 60, size = 1e10) |>
-#'   sf::st_as_sf()
-#' ## TODO: remove SpaDES.tools -- save the test study area shp in the pkg
 #' \donttest{
-#' ezs <- ecozones(studyArea = studyArea)
-#' plot(ezs["ZONE_NAME"], main = "ecozones in study area")
+#' ## study area: a ~100 km buffer around a point in central Alberta
+#' lcc <- paste(
+#'   "+proj=lcc +lat_1=49 +lat_2=77 +lat_0=0 +lon_0=-95",
+#'   "+x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs"
+#' )
+#' study_area <- terra::vect(cbind(-115, 55), crs = "EPSG:4326") |>
+#'   terra::project(lcc) |>
+#'   terra::buffer(1e5)
 #'
-#' eps <- ecoprovinces(studyArea = studyArea)
-#' plot(eps["ECOPROVINC"], main = "ecoprovinces in study area")
-#'
-#' ers <- ecoregions(studyArea = studyArea)
-#' plot(ers["REGION_NAM"], main = "ecoregions in study area", key.pos = 1)
-#'
-#' eds <- ecodistricts(studyArea = studyArea)
-#' plot(eds["ECODISTRIC"], main = "ecodistricts in study area")
+#' ezs <- ecozones(study_area = study_area)
+#' terra::plot(ezs, "ZONE_NAME", main = "ecozones in study area")
 #' }
 #'
 #' @rdname ecoboundaries
 .ecoboundaries <- function(
   type = NULL,
-  destinationPath = tempdir(),
-  studyArea = NULL,
-  rasterToMatch = NULL
+  destination_path = tempdir(),
+  study_area = NULL,
+  raster_to_match = NULL
 ) {
   type <- toupper(type)
-  allowedTypes <- c("ECODISTRICT", "ECOREGION", "ECOPROVINCE", "ECOZONE")
+  allowed_types <- c("ECODISTRICT", "ECOREGION", "ECOPROVINCE", "ECOZONE")
 
-  stopifnot(type %in% allowedTypes)
+  stopifnot(type %in% allowed_types)
 
-  urlList <- list(
-    ecodistrict = "https://sis.agr.gc.ca/cansis/nsdb/ecostrat/district/ecodistrict_shp.zip",
-    ecoregion = "https://sis.agr.gc.ca/cansis/nsdb/ecostrat/region/ecoregion_shp.zip",
-    ecoprovince = "https://sis.agr.gc.ca/cansis/nsdb/ecostrat/province/ecoprovince_shp.zip",
-    ecozone = "https://sis.agr.gc.ca/cansis/nsdb/ecostrat/zone/ecozone_shp.zip"
-  )
-  url <- urlList[[tolower(type)]]
+  url <- .url_ecoboundaries[[tolower(type)]]
 
-  if (!is.null(studyArea) && is(studyArea, "SpatialPolygons")) {
-    studyArea <- sf::st_as_sf(studyArea)
-  }
-  ## TODO: remove reproducible
-  tmp <- prepInputs(
-    url = url,
-    destinationPath = destinationPath,
-    studyArea = studyArea,
-    rasterToMatch = rasterToMatch,
-    fun = "sf::st_read",
-    overwrite = TRUE
-  ) ## TODO: doesn't reproject -- fix upstream?
-  tmp <- st_collection_extract(tmp, "POLYGON") |>
-    st_make_valid()
+  zip <- file.path(destination_path, basename(url))
+  workflowtools::download_once(url, zip, mode = "wb")
+  files <- workflowtools::archive_extract_once(zip, dir = destination_path)
 
-  ## workaround issues with prepInputs() not reprojecting:
-  if (!is.null(rasterToMatch)) {
-    tmp <- sf::st_transform(tmp, terra::crs(rasterToMatch))
-  } else if (is.null(rasterToMatch) && !is.null(studyArea)) {
-    tmp <- sf::st_transform(tmp, sf::st_crs(studyArea))
+  shp <- grep("[.]shp$", files, value = TRUE, ignore.case = TRUE)
+  if (length(shp) == 0L) {
+    stop("no shapefile (.shp) found in '", basename(url), "'")
   }
 
-  return(tmp)
+  tmp <- terra::vect(shp[[1]])
+
+  if (!is.null(study_area) && !inherits(study_area, "SpatVector")) {
+    study_area <- terra::vect(study_area)
+  }
+
+  if (!is.null(study_area)) {
+    ## crop + mask + reproject (terra-native; replaces the postprocessing that
+    ## prepInputs() used to perform internally). Target CRS is raster_to_match's
+    ## when supplied, otherwise the study area's.
+    crs <- if (!is.null(raster_to_match)) terra::crs(raster_to_match) else terra::crs(study_area)
+    tmp <- spatialutils::prep_vector(tmp, studyArea = study_area, crs = crs)
+  } else if (!is.null(raster_to_match)) {
+    tmp <- terra::project(tmp, terra::crs(raster_to_match))
+  }
+
+  tmp
 }
 
 #' @export
 #' @rdname ecoboundaries
-ecodistricts <- function(destinationPath = tempdir(), studyArea = NULL, rasterToMatch = NULL) {
+ecodistricts <- function(destination_path = tempdir(), study_area = NULL, raster_to_match = NULL) {
   .ecoboundaries(
     type = "ECODISTRICT",
-    destinationPath = destinationPath,
-    studyArea = studyArea,
-    rasterToMatch = rasterToMatch
+    destination_path = destination_path,
+    study_area = study_area,
+    raster_to_match = raster_to_match
   )
 }
 
 #' @export
 #' @rdname ecoboundaries
-ecoregions <- function(destinationPath = tempdir(), studyArea = NULL, rasterToMatch = NULL) {
+ecoregions <- function(destination_path = tempdir(), study_area = NULL, raster_to_match = NULL) {
   .ecoboundaries(
     type = "ECOREGION",
-    destinationPath = destinationPath,
-    studyArea = studyArea,
-    rasterToMatch = rasterToMatch
+    destination_path = destination_path,
+    study_area = study_area,
+    raster_to_match = raster_to_match
   )
 }
 
 #' @export
 #' @rdname ecoboundaries
-ecoprovinces <- function(destinationPath = tempdir(), studyArea = NULL, rasterToMatch = NULL) {
+ecoprovinces <- function(destination_path = tempdir(), study_area = NULL, raster_to_match = NULL) {
   .ecoboundaries(
     type = "ECOPROVINCE",
-    destinationPath = destinationPath,
-    studyArea = studyArea,
-    rasterToMatch = rasterToMatch
+    destination_path = destination_path,
+    study_area = study_area,
+    raster_to_match = raster_to_match
   )
 }
 
 #' @export
 #' @rdname ecoboundaries
-ecozones <- function(destinationPath = tempdir(), studyArea = NULL, rasterToMatch = NULL) {
+ecozones <- function(destination_path = tempdir(), study_area = NULL, raster_to_match = NULL) {
   .ecoboundaries(
     type = "ECOZONE",
-    destinationPath = destinationPath,
-    studyArea = studyArea,
-    rasterToMatch = rasterToMatch
+    destination_path = destination_path,
+    study_area = study_area,
+    raster_to_match = raster_to_match
   )
 }

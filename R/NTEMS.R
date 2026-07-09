@@ -1,13 +1,15 @@
 ## annual landcover products (2019; v2)
-.ntemsVLCE2years <- 1984L:2019L
-.ntemsArchivesVLCE2 <- lapply(.ntemsVLCE2years, function(x) paste0("CA_forest_VLCE2_", x, ".zip"))
-names(.ntemsArchivesVLCE2) <- tools::file_path_sans_ext(.ntemsArchivesVLCE2)
+.ntems_vlce2_years <- 1984L:2019L
+.ntems_archives_vlce2 <- lapply(.ntems_vlce2_years, function(x) {
+  paste0("CA_forest_VLCE2_", x, ".zip")
+})
+names(.ntems_archives_vlce2) <- tools::file_path_sans_ext(.ntems_archives_vlce2)
 
-.ntemsTypesVLCE2 <- lapply(.ntemsVLCE2years, function(x) paste0("CA_forest_VLCE2_", x))
-names(.ntemsTypesVLCE2) <- paste0("landcover", .ntemsVLCE2years)
+.ntems_types_vlce2 <- lapply(.ntems_vlce2_years, function(x) paste0("CA_forest_VLCE2_", x))
+names(.ntems_types_vlce2) <- paste0("landcover", .ntems_vlce2_years)
 
 ## other forest data products (2019 or later)
-.ntemsArchives <- list(
+.ntems_archives <- list(
   CA_FAO_forest_2019 = "CA_FAO_forest_2019.zip",
   CA_forest_age = "CA_forest_age_2019.zip",
   CA_forest_Distance2Second = "CA_forest_Distance2Second.zip",
@@ -22,10 +24,10 @@ names(.ntemsTypesVLCE2) <- paste0("landcover", .ntemsVLCE2years)
   CA_Forest_Satellite_Based_Inventory = "CA_Forest_Satellite_Based_Inventory_2020.zip",
   CA_Forest_Wildfire = "CA_Forest_Wildfire_dNBR_1985_2020.zip"
 ) |>
-  append(.ntemsArchivesVLCE2)
+  append(.ntems_archives_vlce2)
 
 ## user-facing types; used to convert to NTEMS archive names
-.ntemsTypes <- list(
+.ntems_types <- list(
   age = "CA_forest_age",
   d2sc = "CA_forest_Distance2Second",
   fao = "CA_FAO_forest_2019",
@@ -40,25 +42,31 @@ names(.ntemsTypesVLCE2) <- paste0("landcover", .ntemsVLCE2years)
   speciesprobs = "CA_forest_tree_species_probabilities",
   wildfirednbr = "CA_Forest_Wildfire"
 ) |>
-  append(.ntemsTypesVLCE2)
+  append(.ntems_types_vlce2)
 
-## NTEMS urls
-.ntemsBaseURL <- "https://opendata.nfis.org/downloads/forest_change/"
-.ntemsURLs <- lapply(.ntemsArchives, function(x) paste0(.ntemsBaseURL, x)) ## preserve names
-
-.ntemsData <- function(destDir, studyArea = NULL, type = NULL) {
+.ntems_data <- function(dest_dir, study_area = NULL, type = NULL) {
   if (is.null(type)) {
     stop("please specify valid NTEMS data type")
-  } else {
-    url <- .ntemsURLs[[type]]
+  }
+  ## build the download URL at call time (base lives in R/urls.R)
+  url <- paste0(.url_ntems, .ntems_archives[[type]])
+
+  archive <- file.path(dest_dir, basename(url))
+  workflowtools::download_once(url, archive, mode = "wb")
+  files <- workflowtools::archive_extract_once(archive, dir = dest_dir)
+
+  tif <- grep("[.]tif$", files, value = TRUE, ignore.case = TRUE)
+  if (length(tif) == 0L) {
+    stop("no raster (.tif) found in NTEMS archive '", basename(url), "'")
   }
 
-  ## TODO: remove reproducible
-  x <- Cache({
-    prepInputs(url = url, studyArea = studyArea, destinationPath = destDir)
-  })
+  r <- terra::rast(tif[[1]])
 
-  return(x)
+  if (!is.null(study_area)) {
+    r <- .crop_mask(r, study_area)
+  }
+
+  r
 }
 
 #' NTEMS data
@@ -73,7 +81,7 @@ names(.ntemsTypesVLCE2) <- paste0("landcover", .ntemsVLCE2years)
 #' `type` must be one of the following:
 #' - `age`: forest age (\doi{10.1016/j.rse.2023.113529});
 #' - `d2sc`: distance-to-second-class for tree species (\doi{10.1016/j.rse.2022.113276});
-#' - `fao`: forest area based on FAO definitions for Canada (\doi{10.1093/forestry/cpaa0063});
+#' - `fao`: forest area based on FAO definitions for Canada (\doi{10.1093/forestry/cpaa006});
 #' - `fires`, `harvest`: wildfire or harvest disturbances (\doi{10.1080/17538947.2016.1187673});
 #' - `firesrecovery`, `harvestrecovery`: post-disturbance forest recovery data
 #'                               (\doi{10.1016/j.rse.2017.03.035}, \doi{10.1016/j.rse.2022.112904});
@@ -89,27 +97,27 @@ names(.ntemsTypesVLCE2) <- paste0("landcover", .ntemsVLCE2years)
 #'
 #' @param type character, specifying which NTEMS product to download and prepare (see Details).
 #'
-#' @param destDir character, specifying the destination directory in which to download
+#' @param dest_dir character, specifying the destination directory in which to download
 #'                and extract the data (defaults to current working directory).
 #'
-#' @param studyArea (optional) `sf` polygon to which the national raster will be cropped and masked.
+#' @param study_area (optional) `sf` polygon to which the national raster will be cropped and masked.
 #'
 #' @return `SpatRaster`
 #'
 #' @export
-ntems <- function(type, destDir = NULL, studyArea = NULL) {
+ntems <- function(type, dest_dir = NULL, study_area = NULL) {
   if (missing(type)) {
     stop("'type' must be specified")
   }
 
   type <- tolower(type)
-  validtypes <- names(.ntemsTypes) |> sort()
+  validtypes <- names(.ntems_types) |> sort()
 
   stopifnot(type %in% validtypes)
 
-  if (is.null(destDir)) {
-    destDir <- getwd()
+  if (is.null(dest_dir)) {
+    dest_dir <- getwd()
   }
 
-  .ntemsData(destDir = destDir, studyArea = studyArea, type = .ntemsTypes[[type]])
+  .ntems_data(dest_dir = dest_dir, study_area = study_area, type = .ntems_types[[type]])
 }

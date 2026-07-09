@@ -4,15 +4,15 @@
 \alias{ntems}
 \title{NTEMS data}
 \usage{
-ntems(type, destDir = NULL, studyArea = NULL)
+ntems(type, dest_dir = NULL, study_area = NULL)
 }
 \arguments{
 \item{type}{character, specifying which NTEMS product to download and prepare (see Details).}
 
-\item{destDir}{character, specifying the destination directory in which to download
+\item{dest_dir}{character, specifying the destination directory in which to download
 and extract the data (defaults to current working directory).}
 
-\item{studyArea}{(optional) \code{sf} polygon to which the national raster will be cropped and masked.}
+\item{study_area}{(optional) \code{sf} polygon to which the national raster will be cropped and masked.}
 }
 \value{
 \code{SpatRaster}
@@ -25,7 +25,7 @@ Get and prepare data from NTEMS (\url{https://opendata.nfis.org/mapserver/nfis-c
 \itemize{
 \item \code{age}: forest age (\doi{10.1016/j.rse.2023.113529});
 \item \code{d2sc}: distance-to-second-class for tree species (\doi{10.1016/j.rse.2022.113276});
-\item \code{fao}: forest area based on FAO definitions for Canada (\doi{10.1093/forestry/cpaa0063});
+\item \code{fao}: forest area based on FAO definitions for Canada (\doi{10.1093/forestry/cpaa006});
 \item \code{fires}, \code{harvest}: wildfire or harvest disturbances (\doi{10.1080/17538947.2016.1187673});
 \item \code{firesrecovery}, \code{harvestrecovery}: post-disturbance forest recovery data
 (\doi{10.1016/j.rse.2017.03.035}, \doi{10.1016/j.rse.2022.112904});
